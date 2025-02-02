@@ -1,4 +1,3 @@
-
 #include "LinearActuatorNoPot.h"
 #include "Log.h"
 
@@ -18,6 +17,9 @@ namespace SkyeTracker
 		_lastTime = 0;
 		_runTime = 0;
 		_southernHemisphere = false;
+		const int pwmFreq = 30000;  // 30kHz
+		const int pwmChannel = 0;    // Kanał PWM (0-15)
+		const int pwmResolution = 8; // 8-bit rozdzielczość
 	}
 
 	LinearActuatorNoPot::~LinearActuatorNoPot()
@@ -41,6 +43,12 @@ namespace SkyeTracker
 		_actuatorLength = actuatorLength;
 		_inchesPerSecond = actuatorSpeed / 100.0;
 		Retract();
+		
+		// Konfiguruj PWM tylko dla silnika horyzontalnego
+		if (_name == "Horizontal") {
+			ledcSetup(pwmChannel, pwmFreq, pwmResolution);
+			ledcAttachPin(_PWMa, pwmChannel);
+		}
 	}
 
 	void LinearActuatorNoPot::run() {
@@ -154,7 +162,12 @@ namespace SkyeTracker
 
 	void LinearActuatorNoPot::MoveOut()
 	{
-		digitalWrite(_PWMa, true);
+		if (_name == "Horizontal") {  // Tylko dla silnika horyzontalnego
+			logi("Moving Horizontal actuator with PWM");
+			ledcWrite(pwmChannel, 179);  // ~70% wypełnienia (179/255 ≈ 0.7)
+		} else {
+			digitalWrite(_PWMa, true);  // Dla pozostałych silników zwykły digitalWrite
+		}
 		digitalWrite(_PWMb, false);
 		digitalWrite(_enableActuator, true);
 		_state = ActuatorState_MovingOut;
@@ -162,7 +175,7 @@ namespace SkyeTracker
 
 	void LinearActuatorNoPot::Stop()
 	{
-		digitalWrite(_PWMa, false);
+		ledcWrite(pwmChannel, 0);  // stop PWM
 		digitalWrite(_PWMb, false);
 		digitalWrite(_enableActuator, false);
 		_state = ActuatorState_Stopped;

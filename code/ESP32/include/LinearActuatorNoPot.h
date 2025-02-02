@@ -4,6 +4,7 @@
 #include <Thread.h>
 #include "Enumerations.h"
 #include "IOT.h"
+#include <Arduino.h>
 
 #define noise 2
 #define histeresis 2
@@ -23,6 +24,9 @@ namespace SkyeTracker
 		virtual ~LinearActuatorNoPot();
 
 	private:
+		const int pwmFreq = 30000;  // 30kHz
+		const int pwmChannel = 0;    // Kanał PWM (0-15)
+		const int pwmResolution = 8; // 8-bit rozdzielczość
 		float _requestedAngle;
 		ActuatorState _state;
 		int _extendedAngle; // angle when actuator is fully extended 
